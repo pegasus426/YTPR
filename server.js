@@ -111,6 +111,41 @@ app.get('/api/subscriptions', async (req, res) => {
   }
 });
 
+// API: Ottieni video piaciuti
+app.get('/api/liked-videos', async (req, res) => {
+  if (!req.session.tokens) {
+    return res.status(401).json({ error: 'Non autenticato' });
+  }
+
+  try {
+    oauth2Client.setCredentials(req.session.tokens);
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    
+    const likedVideos = [];
+    let pageToken = null;
+    let maxPages = 10; // Limita a 10 pagine (500 video) per performance
+    let currentPage = 0;
+    
+    do {
+      const response = await youtube.videos.list({
+        part: 'snippet,contentDetails',
+        myRating: 'like',
+        maxResults: 50,
+        pageToken: pageToken
+      });
+      
+      likedVideos.push(...response.data.items);
+      pageToken = response.data.nextPageToken;
+      currentPage++;
+    } while (pageToken && currentPage < maxPages);
+    
+    res.json(likedVideos);
+  } catch (error) {
+    console.error('Errore nel recupero dei video piaciuti:', error);
+    res.status(500).json({ error: 'Errore nel recupero dei video piaciuti' });
+  }
+});
+
 // API: Cerca video di un canale
 app.post('/api/search-videos', async (req, res) => {
   if (!req.session.tokens) {
@@ -207,6 +242,104 @@ app.post('/api/generate-random-playlist', async (req, res) => {
   } catch (error) {
     console.error('Errore nella generazione della playlist:', error);
     res.status(500).json({ error: 'Errore nella generazione della playlist' });
+  }
+});
+
+// API: Genera playlist basata sui preferiti
+app.post('/api/generate-liked-playlist', async (req, res) => {
+  if (!req.session.tokens) {
+    return res.status(401).json({ error: 'Non autenticato' });
+  }
+
+  const { topArtistsCount = 10, songsPerArtist = 3 } = req.body;
+
+  try {
+    oauth2Client.setCredentials(req.session.tokens);
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    
+    // Ottieni video piaciuti
+    const likedVideos = [];
+    let pageToken = null;
+    let maxPages = 10;
+    let currentPage = 0;
+    
+    console.log('Recupero video piaciuti...');
+    
+    do {
+      const response = await youtube.videos.list({
+        part: 'snippet',
+        myRating: 'like',
+        maxResults: 50,
+        pageToken: pageToken
+      });
+      
+      likedVideos.push(...response.data.items);
+      pageToken = response.data.nextPageToken;
+      currentPage++;
+    } while (pageToken && currentPage < maxPages);
+    
+    console.log(`Trovati ${likedVideos.length} video piaciuti`);
+    
+    // Conta i like per canale
+    const channelLikes = {};
+    
+    for (const video of likedVideos) {
+      const channelId = video.snippet.channelId;
+      const channelTitle = video.snippet.channelTitle;
+      
+      if (!channelLikes[channelId]) {
+        channelLikes[channelId] = {
+          channelId: channelId,
+          channelTitle: channelTitle,
+          likeCount: 0,
+          likedVideos: []
+        };
+      }
+      
+      channelLikes[channelId].likeCount++;
+      channelLikes[channelId].likedVideos.push({
+        videoId: video.id,
+        title: video.snippet.title,
+        thumbnail: video.snippet.thumbnails.default?.url || video.snippet.thumbnails.medium?.url
+      });
+    }
+    
+    // Ordina canali per numero di like
+    const sortedChannels = Object.values(channelLikes)
+      .sort((a, b) => b.likeCount - a.likeCount)
+      .slice(0, topArtistsCount);
+    
+    console.log(`Top ${topArtistsCount} artisti selezionati`);
+    
+    // Seleziona video casuali dai canali più likati
+    const allVideos = [];
+    
+    for (const channel of sortedChannels) {
+      // Mescola i video piaciuti del canale
+      const shuffledVideos = channel.likedVideos.sort(() => 0.5 - Math.random());
+      const selectedVideos = shuffledVideos.slice(0, Math.min(songsPerArtist, shuffledVideos.length)).map(v => ({
+        videoId: v.videoId,
+        title: v.title,
+        artist: channel.channelTitle,
+        thumbnail: v.thumbnail,
+        likes: channel.likeCount
+      }));
+      
+      allVideos.push(...selectedVideos);
+    }
+    
+    res.json({
+      videos: allVideos,
+      artistCount: sortedChannels.length,
+      topArtists: sortedChannels.map(c => ({
+        name: c.channelTitle,
+        likes: c.likeCount
+      })),
+      totalLikedVideos: likedVideos.length
+    });
+  } catch (error) {
+    console.error('Errore nella generazione della playlist dai preferiti:', error);
+    res.status(500).json({ error: 'Errore nella generazione della playlist dai preferiti' });
   }
 });
 

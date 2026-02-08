@@ -19,21 +19,62 @@
       <div class="card">
         <h2>Genera Playlist Casuale</h2>
         
-        <div class="form-group">
-          <label for="artistCount">Numero di artisti da includere:</label>
-          <input type="number" id="artistCount" min="1" max="20" value="5">
-          <small>Selezionerà casualmente tra i canali che segui</small>
+        <!-- Selezione modalità -->
+        <div class="mode-selector">
+          <button id="randomModeBtn" class="mode-btn active">
+            🎲 Casuali dai Seguiti
+          </button>
+          <button id="likedModeBtn" class="mode-btn">
+            ❤️ Dai Preferiti
+          </button>
         </div>
 
-        <div class="form-group">
-          <label for="songsPerArtist">Brani per artista:</label>
-          <input type="number" id="songsPerArtist" min="1" max="10" value="3">
-          <small>Numero di brani casuali per ogni artista</small>
+        <!-- Modalità Random -->
+        <div id="randomMode" class="mode-content active">
+          <div class="form-group">
+            <label for="artistCount">Numero di artisti da includere:</label>
+            <input type="number" id="artistCount" min="1" max="20" value="5">
+            <small>Selezionerà casualmente tra i canali che segui</small>
+          </div>
+
+          <div class="form-group">
+            <label for="songsPerArtist">Brani per artista:</label>
+            <input type="number" id="songsPerArtist" min="1" max="10" value="3">
+            <small>Numero di brani casuali per ogni artista</small>
+          </div>
+
+          <button id="generateBtn" class="btn btn-primary">
+            🎲 Genera Playlist Casuale
+          </button>
         </div>
 
-        <button id="generateBtn" class="btn btn-primary">
-          🎲 Genera Playlist Casuale
-        </button>
+        <!-- Modalità Liked -->
+        <div id="likedMode" class="mode-content">
+          <div class="form-group">
+            <label for="topArtistsCount">
+              Top artisti da includere: <span id="topArtistsValue">10</span>
+            </label>
+            <input type="range" id="topArtistsCount" min="5" max="100" value="10" step="5" class="slider">
+            <div class="slider-labels">
+              <span>5</span>
+              <span>Top 10</span>
+              <span>Top 25</span>
+              <span>Top 50</span>
+              <span>100</span>
+            </div>
+            <small>Gli artisti più presenti nei tuoi video piaciuti</small>
+          </div>
+
+          <div class="form-group">
+            <label for="songsPerArtistLiked">Brani per artista:</label>
+            <input type="number" id="songsPerArtistLiked" min="1" max="10" value="3">
+            <small>Numero di brani casuali dai tuoi preferiti per ogni artista</small>
+          </div>
+
+          <button id="generateLikedBtn" class="btn btn-primary">
+            ❤️ Genera da Preferiti
+          </button>
+        </div>
 
         <div id="loading" class="loading" style="display: none;">
           <div class="spinner"></div>
@@ -44,6 +85,8 @@
       <div id="playlistPreview" class="card" style="display: none;">
         <h2>📋 Anteprima Playlist</h2>
         <div id="playlistStats" class="stats"></div>
+        
+        <div id="topArtistsList" class="top-artists" style="display: none;"></div>
         
         <div id="videoList" class="video-list"></div>
 

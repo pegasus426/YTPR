@@ -5,10 +5,15 @@ Una web app Node.js completa che permette di creare playlist casuali su YouTube 
 ## 🎵 Caratteristiche
 
 - **Autenticazione OAuth2**: Accesso sicuro al tuo account YouTube
-- **Generazione Casuale**: Crea playlist con brani scelti casualmente dai tuoi artisti preferiti
-- **Personalizzazione**: Scegli quanti artisti includere e quanti brani per artista
+- **Due Modalità di Generazione**:
+  - **🎲 Casuali dai Seguiti**: Crea playlist con brani scelti casualmente dai canali che segui
+  - **❤️ Dai Preferiti**: Genera playlist basate sui tuoi video piaciuti, selezionando gli artisti più presenti nei tuoi like
+- **Personalizzazione Avanzata**: 
+  - Scegli quanti artisti includere (slider da 5 a 100 per i preferiti)
+  - Imposta quanti brani per artista
+  - Visualizza statistiche sui tuoi artisti più likati
 - **Salvataggio Automatico**: Salva le playlist direttamente su YouTube Music
-- **Interfaccia Intuitiva**: UI moderna e responsive
+- **Interfaccia Intuitiva**: UI moderna e responsive con switch tra modalità
 
 ## 📋 Prerequisiti
 
@@ -109,6 +114,17 @@ Vai su `http://localhost:3000`
 5. Inserisci un nome per la playlist
 6. Clicca "Salva su YouTube"
 
+### 5. Modalità Preferiti (Opzionale)
+
+La modalità "Dai Preferiti" analizza i tuoi video piaciuti su YouTube e crea playlist basate sui tuoi artisti più ascoltati:
+
+1. Clicca sul pulsante "❤️ Dai Preferiti"
+2. Usa lo slider per selezionare quanti artisti includere (es. Top 10, Top 50, Top 100)
+3. L'algoritmo conta i like per ogni canale/artista
+4. Seleziona casualmente brani dai tuoi video preferiti degli artisti più likati
+5. Visualizza la classifica dei tuoi top artisti con il numero di like
+6. Salva la playlist su YouTube
+
 ## 📁 Struttura del Progetto
 
 ```
@@ -140,14 +156,27 @@ Callback OAuth2 (configurato in Google Cloud Console)
 ### GET `/dashboard`
 Dashboard principale (richiede autenticazione)
 
+### GET `/api/liked-videos`
+Ottiene i video piaciuti dall'utente (massimo 500)
+
 ### POST `/api/generate-random-playlist`
-Genera una playlist casuale
+Genera una playlist casuale dai canali seguiti
 ```json
 {
   "artistCount": 5,
   "songsPerArtist": 3
 }
 ```
+
+### POST `/api/generate-liked-playlist`
+Genera una playlist basata sui video preferiti
+```json
+{
+  "topArtistsCount": 10,
+  "songsPerArtist": 3
+}
+```
+Risposta include: videos, artistCount, topArtists (con nome e numero di like), totalLikedVideos
 
 ### POST `/api/create-playlist`
 Salva la playlist su YouTube
@@ -207,4 +236,3 @@ Per problemi o domande, apri un issue su GitHub.
 ---
 
 Creato con ❤️ per gli amanti della musica casuale
-# YTPR
